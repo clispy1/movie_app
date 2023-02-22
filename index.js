@@ -24,7 +24,6 @@ search();
 function displayMovie(movies) {
 	main.innerHTML = "";
 
-	console.log(movies);
 
 	movies.forEach((movie) => {
 		const { poster_path: image, title, release_date: year, overview } = movie;
@@ -55,8 +54,6 @@ async function searchMovie(data) {
 	let request = await fetch(response);
 
 	const rep = await request.json();
-
-	console.log(rep.results.map((date) => date.release_date.split("-")[0]));
 
 	searchedMovies = rep.results;
 	displayMovie(rep.results);
