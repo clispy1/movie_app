@@ -1,0 +1,116 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: "Bai Jamjuree", sans-serif;
+  background: #22254b;
+  color: white;
+}
+
+header {
+  display: grid;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  text-align: center;
+  place-items: center;
+  margin-bottom: 20px;
+}
+header #searchfield {
+  padding: 10px 15px;
+  border: 1px solid #aaa;
+  border-radius: 20px;
+  color: #fff;
+  background-color: #141635;
+  font-family: inherit;
+  font-weight: 400;
+  font-size: 18px;
+}
+header #searchfield:focus {
+  outline: 2px white solid;
+  background: #22254b;
+}
+
+.search::-moz-placeholder {
+  color: white;
+}
+
+.search:-ms-input-placeholder {
+  color: white;
+}
+
+.search::placeholder {
+  color: white;
+}
+
+button {
+  background: transparent;
+  border: 2px solid #aaa;
+  border-radius: 10px;
+  padding: 10px;
+  font-family: inherit;
+  font-weight: 600;
+  font-size: 18px;
+  color: white;
+  margin-left: 10px;
+}
+
+button:hover {
+  background: #222961;
+}
+
+h1 {
+  color: white;
+  position: -webkit-sticky;
+  position: sticky;
+}
+
+img {
+  width: 100%;
+  margin: 0;
+}
+
+main {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  transition: all 0.5s ease;
+}
+main .movie {
+  width: 300px;
+  border-radius: 15px;
+  margin: 10px;
+  background: #222961;
+  overflow: hidden;
+  position: relative;
+}
+main .movie .movie-info {
+  margin: 0;
+  padding: 5px 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+main .movie .movie-info .rating {
+  background: #141635;
+  padding: 7px;
+  border-radius: 5px;
+}
+main .movie .description {
+  text-align: center;
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  overflow: auto;
+  background: rgba(0, 0, 0, 0.7);
+  padding: 8px;
+  transform: translate(105%);
+  border-radius: 10px;
+  transition: all 0.7s ease-in-out;
+}
+main .movie:hover .description {
+  transform: translate(0%);
+}/*# sourceMappingURL=style.css.map */
