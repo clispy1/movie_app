@@ -50,7 +50,7 @@ let searchedMovies = "";
 
 async function searchMovie(data) {
 	let query = data;
-	let response = `https://api.themoviedb.org/3/search/movie?api_key=fcf2233bcea67f1b4a068f62804d1ecb&language=en-US&page=${searchCount}&include_adult=false&query="${query}`;
+	let response = `https://api.themoviedb.org/3/search/movie?api_key=fcf2233bcea67f1b4a068f62804d1ecb&language=en-US&page=${searchCount}&include_adult=true&query="${query}`;
 	let request = await fetch(response);
 
 	const rep = await request.json();
