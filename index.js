@@ -1,10 +1,17 @@
 const api_key = "fcf2233bcea67f1b4a068f62804d1ecb";
+const IMG_PATH = "https://image.tmdb.org/t/p/original";
 let count = 1;
-let searchCount = 1;
-const API_URL = `https://api.themoviedb.org/3/discover/movie?api_key=${api_key}&sort_by=popularity.desc&include_adult=false&page=`;
+const filter = document.getElementById("safesearch")
 
-const SEARCH = `https://api.themoviedb.org/3/search/movie?api_key=fcf2233bcea67f1b4a068f62804d1ecb&language=en-US&page=${count}&include_adult=false&query="`;
-const IMG_PATH = "https://image.tmdb.org/t/p/w500";
+filter.addEventListener("change", () => {
+	input.value === "" ? search() : searchMovie(input.value);
+});
+
+const SEARCH = `https://api.themoviedb.org/3/search/movie?api_key=fcf2233bcea67f1b4a068f62804d1ecb&language=en-US&page=${count}&include_adult=${filter.value}&query="`;
+
+let searchCount = 1;
+
+
 
 let input = document.querySelector(".search");
 let form = document.querySelector("#form");
@@ -12,18 +19,25 @@ const main = document.querySelector("#main");
 const rates = document.querySelector(".rating");
 
 function search() {
+	console.log(filter.value, SEARCH, "no search");
 	main.innerHTML = "";
+
+	const API_URL = `https://api.themoviedb.org/3/discover/movie?api_key=${api_key}&sort_by=popularity.desc&include_adult=${filter.value}&page=`;
+
+
 
 	fetch(API_URL + count)
 		.then((req) => req.json())
 		.then((json) => displayMovie(json.results))
 		.catch((err) => console.log(err));
 }
+
 search();
 
-function displayMovie(movies) {
-	main.innerHTML = "";
 
+function displayMovie(movies) {
+
+	main.innerHTML = "";
 
 	movies.forEach((movie) => {
 		const { poster_path: image, title, release_date: year, overview } = movie;
@@ -49,14 +63,18 @@ function displayMovie(movies) {
 let searchedMovies = "";
 
 async function searchMovie(data) {
+	
 	let query = data;
-	let response = `https://api.themoviedb.org/3/search/movie?api_key=fcf2233bcea67f1b4a068f62804d1ecb&language=en-US&page=${searchCount}&include_adult=false&query="${query}`;
+	let response = `https://api.themoviedb.org/3/search/movie?api_key=fcf2233bcea67f1b4a068f62804d1ecb&language=en-US&page=${searchCount}&include_adult=${filter.value}&query="${query}`;
 	let request = await fetch(response);
-
+	
 	const rep = await request.json();
+	console.log(rep, "search");
 
+	
 	searchedMovies = rep.results;
 	displayMovie(rep.results);
+	document.querySelector(".results").innerHTML = rep.total_results
 }
 
 form.addEventListener("submit", (e) => {
