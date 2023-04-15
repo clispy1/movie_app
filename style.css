@@ -36,15 +36,11 @@ header #searchfield:focus {
   color: white;
 }
 
-.search:-ms-input-placeholder {
-  color: white;
-}
-
 .search::placeholder {
   color: white;
 }
 
-button {
+button, .results {
   background: transparent;
   border: 2px solid #aaa;
   border-radius: 10px;
@@ -60,15 +56,39 @@ button:hover {
   background: #222961;
 }
 
-h1 {
+#prev {
+  margin-right: 10px;
+}
+
+h1 a {
   color: white;
-  position: -webkit-sticky;
   position: sticky;
 }
 
 img {
   width: 100%;
   margin: 0;
+}
+
+.flex {
+  display: flex;
+  justify-content: center;
+}
+.flex select {
+  border: 1.3px solid #fff;
+  border-radius: 10px;
+  color: #fff;
+  margin-left: 50px;
+  width: 130px;
+  padding: 10px;
+  font-size: 18px;
+  background: transparent;
+}
+.flex select option {
+  color: black;
+  background: transparent;
+  padding: 5px;
+  margin: 2px;
 }
 
 main {
@@ -78,7 +98,7 @@ main {
   transition: all 0.5s ease;
 }
 main .movie {
-  width: 300px;
+  width: 700px;
   border-radius: 15px;
   margin: 10px;
   background: #222961;
@@ -109,9 +129,10 @@ main .movie .description {
   padding: 8px;
   transform: translate(105%);
   border-radius: 10px;
-  transition: all 0.7s ease-in-out;
+  transition: all 0.7s ease-in-out 2s;
+  transition-delay: 1s;
 }
 main .movie:hover .description {
+  transition-delay: 3s;
   transform: translate(0%);
-  transition-delay: 5s;
 }/*# sourceMappingURL=style.css.map */
