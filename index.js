@@ -1,5 +1,5 @@
 const api_key = "fcf2233bcea67f1b4a068f62804d1ecb";
-const IMG_PATH = "https://image.tmdb.org/t/p/original";
+const IMG_PATH = "https://image.tmdb.org/t/p/w500/";
 let count = 1;
 const filter = document.getElementById("safesearch")
 
@@ -40,7 +40,7 @@ function displayMovie(movies) {
 	main.innerHTML = "";
 
 	movies.forEach((movie) => {
-		const { poster_path: image, title, release_date: year, overview } = movie;
+		const { backdrop_path: image, title, release_date: year, overview } = movie;
 
 		const movieEl = document.createElement("div");
 		movieEl.classList.add("movie");
