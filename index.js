@@ -40,7 +40,7 @@ function displayMovie(movies) {
 	main.innerHTML = "";
 
 	movies.forEach((movie) => {
-		const { backdrop_path: image, title, release_date: year, overview } = movie;
+		const { poster_path: image, title, release_date: year, overview } = movie;
 
 		const movieEl = document.createElement("div");
 		movieEl.classList.add("movie");
@@ -69,7 +69,6 @@ async function searchMovie(data) {
 	let request = await fetch(response);
 	
 	const rep = await request.json();
-	console.log(rep, "search");
 
 	
 	searchedMovies = rep.results;
