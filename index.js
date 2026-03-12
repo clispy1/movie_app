@@ -281,7 +281,12 @@ function displayMovies(items, append = false) {
         const card = document.createElement("div");
         card.classList.add("movie");
         card.innerHTML = `
-            <img src="${poster_path ? POSTER_PATH + poster_path : 'https://via.placeholder.com/500x750?text=No+Poster'}" alt="${title}">
+            <img 
+                src="${poster_path ? POSTER_PATH + poster_path : 'https://via.placeholder.com/500x750?text=No+Poster'}" 
+                alt="${title}"
+                loading="lazy"
+                onload="this.classList.add('loaded')"
+            >
             <div class="movie-info">
                 <h3>${title}</h3>
                 <div class="movie-meta">
@@ -400,7 +405,13 @@ async function openDetails(id, scrollToTrailer = false) {
                         <div class="horizontal-scroll">
                             ${credits.cast.slice(0, 10).map(person => `
                                 <div class="cast-card">
-                                    <img class="cast-img" src="${person.profile_path ? CAST_PATH + person.profile_path : 'https://via.placeholder.com/150'}" alt="${person.name}">
+                                    <img 
+                                        class="cast-img" 
+                                        src="${person.profile_path ? CAST_PATH + person.profile_path : 'https://via.placeholder.com/150'}" 
+                                        alt="${person.name}"
+                                        loading="lazy"
+                                        onload="this.classList.add('loaded')"
+                                    >
                                     <span class="cast-name">${person.name}</span>
                                     <span class="cast-role">${person.character}</span>
                                 </div>
@@ -415,7 +426,12 @@ async function openDetails(id, scrollToTrailer = false) {
             const mTitle = mediaType === 'movie' ? m.title : m.name;
             return `
                                 <div class="similar-card" onclick="openDetails(${m.id})">
-                                    <img src="${m.poster_path ? POSTER_PATH + m.poster_path : 'https://via.placeholder.com/200x300'}" alt="${mTitle}">
+                                    <img 
+                                        src="${m.poster_path ? POSTER_PATH + m.poster_path : 'https://via.placeholder.com/200x300'}" 
+                                        alt="${mTitle}"
+                                        loading="lazy"
+                                        onload="this.classList.add('loaded')"
+                                    >
                                     <div class="similar-title">${mTitle}</div>
                                 </div>
                                 `

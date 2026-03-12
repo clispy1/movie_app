@@ -487,9 +487,46 @@ body {
   width: 100%;
   aspect-ratio: 2/3;
   object-fit: cover;
-  transition: var(--transition-smooth);
+  transition: opacity 0.5s ease-in, transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
   transform: translateZ(20px);
   /* Pushes image forward in 3D space */
+  opacity: 0;
+}
+
+.movie img.loaded,
+.cast-img.loaded,
+.similar-card img.loaded {
+  opacity: 1;
+}
+
+.movie:hover img.loaded {
+  opacity: 0.7;
+}
+
+/* Base Skeleton background for empty image areas */
+.movie,
+.similar-card,
+.cast-img {
+  background: var(--surface-color);
+  position: relative;
+}
+
+.movie::after,
+.similar-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.03), transparent);
+  animation: shimmer 2s infinite;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.movie img,
+.similar-card img {
+  position: relative;
+  z-index: 2;
+  /* Put image above the shimmer placeholder */
 }
 
 .movie-info {
