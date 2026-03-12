@@ -682,3 +682,29 @@ function setupEventListeners() {
         loadMovies();
     };
 }
+
+// Mobile Bottom Navigation
+function bottomNavClick(tab) {
+    // Update active state
+    document.querySelectorAll('.bottom-nav-item').forEach(i => i.classList.remove('active'));
+    document.getElementById(`bnav-${tab}`)?.classList.add('active');
+
+    if (tab === 'home') {
+        currentGenre = "all";
+        currentSearch = "";
+        searchInput.value = "";
+        filterYear.value = "";
+        filterRating.value = "";
+        currentPage = 1;
+        hasMoreMovies = true;
+        loadMovies();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else if (tab === 'search') {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        setTimeout(() => searchInput.focus(), 300);
+    } else if (tab === 'watchlist') {
+        currentGenre = "watchlist";
+        loadMovies();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+}
