@@ -1,46 +1,95 @@
 <!DOCTYPE html>
 <html lang="en">
-	<head>
-		<meta charset="UTF-8" />
-		<meta http-equiv="X-UA-Compatible" content="IE=edge" />
-		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-		<title>MovieLand</title>
-		<link rel="stylesheet" href="./style.css" />
-	</head>
-	<body>
-		<header class="header">
-			<h1 id="app-name"><a href="index.html">MovieLand</a></h1>
-			<form id="form">
-				<input
-				type="text"
-				id="searchfield"
-				class="search"
-				placeholder="Search movie..."
-				/>
-				<button type="submit">Search</button>
 
-			</form>
-		</header>
-		
-		<div class="flex">
-			
-			<div style="display: flex; justify-content: center;">
-				
-				<button id="prev">Prev </button>
-				<p id="num"> </p>
-				<button id="next">Next</button>
-				<p><span class="results">0</span> movies</p>
-			</div>
-			
-			
-			<select name="safesearch" id="safesearch">
-				Safe Search
-				<option value="false">filter On</option>
-				<option value="true">filter Off</option>
-			</select>
-		</div>
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MovieLand | Premium Streaming Experience</title>
+    <link rel="stylesheet" href="./style.css" />
+</head>
 
-		<main id="main"></main>
-		<script src="./index.js"></script>
-	</body>
+<body>
+    <!-- Background Decoration -->
+    <div class="bg-blobs">
+        <div class="blob"></div>
+        <div class="blob"></div>
+        <div class="blob"></div>
+    </div>
+
+    <div class="app-container">
+        <!-- Sidebar for Genres & Navigation -->
+        <aside class="sidebar">
+            <div class="logo">
+                <a href="index.html">MovieLand</a>
+            </div>
+            <nav class="nav-links">
+                <a href="#" class="active" data-genre="all">Discover</a>
+                <a href="#" data-genre="watchlist">Watchlist</a>
+                <div class="genre-list">
+                    <p class="section-title">Genres</p>
+                    <div id="genres-container">
+                        <!-- Genres will be injected here -->
+                    </div>
+                </div>
+            </nav>
+        </aside>
+
+        <div class="main-content">
+            <!-- Header with Search and Sorting -->
+            <header class="header">
+                <div class="search-bar">
+                    <form id="form">
+                        <i class="search-icon">🔍</i>
+                        <input type="text" id="searchfield" class="search" placeholder="Search for movies..."
+                            autocomplete="off" />
+                    </form>
+                </div>
+                <div class="header-actions">
+                    <select id="sort-by" class="glass-select">
+                        <option value="popularity.desc">Popularity</option>
+                        <option value="vote_average.desc">Top Rated</option>
+                        <option value="primary_release_date.desc">Newest</option>
+                        <option value="revenue.desc">Box Office</option>
+                    </select>
+                    <select id="safesearch" class="glass-select">
+                        <option value="false">Safe Search Off</option>
+                        <option value="true">Safe Search On</option>
+                    </select>
+                </div>
+            </header>
+
+            <!-- Hero Section for Featured Movie -->
+            <section id="hero" class="hero">
+                <!-- Featured movie content injected here -->
+            </section>
+
+            <!-- Grid Controls -->
+            <div class="grid-controls">
+                <span class="results-count"><span class="results">0</span> Movies found</span>
+                <!-- Pagination -->
+                <div class="pagination-container">
+                    <button id="prev" class="btn-icon">←</button>
+                    <div id="num" class="page-indicator">Page 1</div>
+                    <button id="next" class="btn-icon">→</button>
+                </div>
+            </div>
+
+            <!-- Movie Grid -->
+            <main id="main" class="movie-grid"></main>
+        </div>
+    </div>
+
+    <!-- Movie Detail Modal -->
+    <div id="modal" class="modal">
+        <div class="modal-content glass">
+            <span class="close-modal">&times;</span>
+            <div id="modal-body">
+                <!-- Detail content injected here -->
+            </div>
+        </div>
+    </div>
+
+    <script src="./index.js"></script>
+</body>
+
 </html>
