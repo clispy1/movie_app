@@ -940,6 +940,33 @@ body {
   transition: var(--transition-smooth);
 }
 
+.remove-recent {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 24px;
+  height: 24px;
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  z-index: 5;
+  transition: var(--transition-smooth);
+  opacity: 0;
+}
+
+.similar-card:hover .remove-recent {
+  opacity: 1;
+}
+
+.remove-recent:hover {
+  background: var(--danger-color);
+  transform: scale(1.1);
+}
+
 .similar-card:hover {
   transform: scale(1.05);
   box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);

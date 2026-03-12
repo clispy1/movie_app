@@ -179,6 +179,13 @@ function trackRecentlyViewed(item, title, date) {
     renderRecentlyViewed();
 }
 
+function removeFromRecentlyViewed(event, id, type) {
+    event.stopPropagation();
+    recentlyViewed = recentlyViewed.filter(r => !(r.id === id && r.mediaType === type));
+    localStorage.setItem('recentlyViewed', JSON.stringify(recentlyViewed));
+    renderRecentlyViewed();
+}
+
 function renderRecentlyViewed() {
     const section = document.getElementById('recently-viewed-section');
     const list = document.getElementById('recently-viewed-list');
@@ -192,6 +199,7 @@ function renderRecentlyViewed() {
     section.classList.remove('hidden');
     list.innerHTML = recentlyViewed.map(item => `
         <div class="similar-card" onclick="openDetails(${item.id})" style="min-width: 130px;">
+            <div class="remove-recent" onclick="removeFromRecentlyViewed(event, ${item.id}, '${item.mediaType}')">&times;</div>
             <img 
                 src="${item.poster_path ? POSTER_PATH + item.poster_path : 'https://via.placeholder.com/200x300'}" 
                 alt="${item.title}"
