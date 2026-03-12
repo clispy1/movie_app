@@ -30,6 +30,57 @@ body {
   color: var(--text-main);
   min-height: 100vh;
   overflow-x: hidden;
+  cursor: none;
+  /* Hide default cursor since we use a custom spotlight */
+}
+
+/* ===================== */
+/* ELITE VISUAL EFFECTS  */
+/* ===================== */
+
+/* Scroll Progress Bar */
+#scroll-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 3px;
+  width: 0%;
+  background: linear-gradient(90deg, var(--primary-color), var(--secondary-color), var(--dynamic-glow));
+  z-index: 9999;
+  transition: width 0.1s linear;
+  box-shadow: 0 0 10px var(--primary-color);
+}
+
+/* Film Grain Overlay */
+.grain-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9998;
+  pointer-events: none;
+  opacity: 0.035;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 256px;
+}
+
+/* Cursor Spotlight */
+#cursor-spotlight {
+  position: fixed;
+  pointer-events: none;
+  z-index: 9997;
+  width: 500px;
+  height: 500px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(108, 92, 231, 0.08) 0%, transparent 70%);
+  transform: translate(-50%, -50%);
+  transition: background 0.5s ease;
+  top: 0;
+  left: 0;
+}
+
+/* Utility hidden class */
+.hidden {
+  display: none !important;
 }
 
 /* Background Blobs for Immersion */
@@ -164,6 +215,8 @@ body {
 .nav-links a.active {
   background: linear-gradient(90deg, rgba(108, 92, 231, 0.2), transparent);
   border-left: 4px solid var(--primary-color);
+  color: var(--text-main);
+  box-shadow: 0 0 20px rgba(108, 92, 231, 0.2), inset 0 0 10px rgba(108, 92, 231, 0.05);
 }
 
 .genre-item {
@@ -454,7 +507,19 @@ body {
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
   gap: 2.5rem 2rem;
   perspective: 1000px;
-  /* Key for 3D effect */
+}
+
+/* Staggered Card Entrance Animation */
+@keyframes cardEntrance {
+  from {
+    opacity: 0;
+    transform: translateY(40px) scale(0.95);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 /* 3D Card Hover Effects */
@@ -466,8 +531,9 @@ body {
   background: var(--surface-color);
   border: 1px solid var(--surface-border);
   transition: transform 0.1s ease, box-shadow 0.1s ease;
-  /* fast transition for fluid mousemove */
   transform-style: preserve-3d;
+  animation: cardEntrance 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+  /* animation-delay set per-card by JS */
 }
 
 .movie::before {
@@ -483,7 +549,8 @@ body {
 
 .movie:hover {
   z-index: 10;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6), 0 0 20px var(--dynamic-glow);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6), 0 0 30px var(--dynamic-glow);
+  border-color: rgba(108, 92, 231, 0.4);
 }
 
 .movie:hover::before {

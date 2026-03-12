@@ -10,6 +10,7 @@ let currentGenre = "all";
 let sortBy = "popularity.desc";
 let mediaType = "movie"; // 'movie' or 'tv'
 let watchlist = JSON.parse(localStorage.getItem('watchlist')) || [];
+let recentlyViewed = JSON.parse(localStorage.getItem('recentlyViewed')) || [];
 let searchTimeout;
 let isFetching = false;
 let hasMoreMovies = true;
@@ -52,17 +53,117 @@ scrollTrigger.style.width = "100%";
 init();
 
 async function init() {
-    // Remove pagination controls as we use infinite scroll
-    const pagination = document.querySelector('.pagination-container');
-    if (pagination) pagination.style.display = 'none';
-
-    // Insert scroll trigger after main but inside the main-content wrapper
     main.parentNode.insertBefore(scrollTrigger, main.nextSibling);
-
     await fetchGenres();
     loadMovies();
     setupEventListeners();
     setupParallax();
+    setupEliteEffects();
+    setupKeyboardNav();
+    renderRecentlyViewed();
+}
+
+// =====================
+// ELITE EFFECTS SETUP
+// =====================
+function setupEliteEffects() {
+    const spotlight = document.getElementById('cursor-spotlight');
+    const progressBar = document.getElementById('scroll-progress');
+
+    // Cursor Spotlight
+    document.addEventListener('mousemove', (e) => {
+        spotlight.style.left = e.clientX + 'px';
+        spotlight.style.top = e.clientY + 'px';
+        // Update spotlight color to match dynamic glow
+        const glow = getComputedStyle(document.documentElement).getPropertyValue('--dynamic-glow').trim();
+        spotlight.style.background = `radial-gradient(circle, ${glow}18 0%, transparent 70%)`;
+    });
+
+    // Scroll Progress Bar
+    const scrollArea = document.querySelector('.main-content');
+    if (scrollArea) {
+        scrollArea.addEventListener('scroll', () => {
+            const scrolled = scrollArea.scrollTop;
+            const total = scrollArea.scrollHeight - scrollArea.clientHeight;
+            const pct = total > 0 ? (scrolled / total) * 100 : 0;
+            progressBar.style.width = pct + '%';
+        });
+    } else {
+        window.addEventListener('scroll', () => {
+            const scrolled = window.scrollY;
+            const total = document.body.scrollHeight - window.innerHeight;
+            const pct = total > 0 ? (scrolled / total) * 100 : 0;
+            progressBar.style.width = pct + '%';
+        });
+    }
+}
+
+// Keyboard Navigation
+function setupKeyboardNav() {
+    document.addEventListener('keydown', (e) => {
+        const isTyping = e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA';
+
+        // Press '/' to focus search
+        if (e.key === '/' && !isTyping) {
+            e.preventDefault();
+            searchInput.focus();
+            searchInput.select();
+        }
+
+        // Escape to close modal or blur search
+        if (e.key === 'Escape') {
+            if (modal.style.display === 'flex') {
+                modal.style.display = 'none';
+                const iframe = modal.querySelector('iframe');
+                if (iframe) iframe.src = iframe.src;
+            } else if (document.activeElement === searchInput) {
+                searchInput.blur();
+            }
+        }
+    });
+}
+
+// Recently Viewed
+function trackRecentlyViewed(item, title, date) {
+    // Remove if already exists
+    recentlyViewed = recentlyViewed.filter(r => !(r.id === item.id && r.mediaType === mediaType));
+    // Add to front
+    recentlyViewed.unshift({
+        id: item.id,
+        title: title,
+        poster_path: item.poster_path,
+        vote_average: item.vote_average,
+        date: date,
+        mediaType: mediaType
+    });
+    // Keep max 12 items
+    recentlyViewed = recentlyViewed.slice(0, 12);
+    localStorage.setItem('recentlyViewed', JSON.stringify(recentlyViewed));
+    renderRecentlyViewed();
+}
+
+function renderRecentlyViewed() {
+    const section = document.getElementById('recently-viewed-section');
+    const list = document.getElementById('recently-viewed-list');
+    if (!section || !list) return;
+
+    if (recentlyViewed.length === 0) {
+        section.classList.add('hidden');
+        return;
+    }
+
+    section.classList.remove('hidden');
+    list.innerHTML = recentlyViewed.map(item => `
+        <div class="similar-card" onclick="openDetails(${item.id})" style="min-width: 130px;">
+            <img 
+                src="${item.poster_path ? POSTER_PATH + item.poster_path : 'https://via.placeholder.com/200x300'}" 
+                alt="${item.title}"
+                loading="lazy"
+                onload="this.classList.add('loaded')"
+            >
+            <div class="similar-title">${item.title}</div>
+        </div>
+    `).join('');
 }
 
 // Enhanced Fetch with SessionStorage Caching
@@ -273,13 +374,15 @@ function displayMovies(items, append = false) {
         return;
     }
 
-    items.forEach(item => {
+    items.forEach((item, index) => {
         const title = mediaType === 'movie' ? item.title : item.name;
         const date = mediaType === 'movie' ? item.release_date : item.first_air_date;
         const { id, poster_path, vote_average } = item;
 
         const card = document.createElement("div");
         card.classList.add("movie");
+        // Staggered entrance: cap at 400ms so the 50th card doesn't wait 8 seconds
+        card.style.animationDelay = `${Math.min(index * 40, 400)}ms`;
         card.innerHTML = `
             <img 
                 src="${poster_path ? POSTER_PATH + poster_path : 'https://via.placeholder.com/500x750?text=No+Poster'}" 
@@ -296,21 +399,14 @@ function displayMovies(items, append = false) {
             </div>
         `;
 
-        // 💫 3D Tilt Effect Setup
+        // 💫 3D Tilt Effect
         card.addEventListener('mousemove', (e) => {
             const rect = card.getBoundingClientRect();
             const x = e.clientX - rect.left;
             const y = e.clientY - rect.top;
-
-            // Calculate rotation (max 15 degrees)
             const xPct = (x / rect.width - 0.5) * 2;
             const yPct = (y / rect.height - 0.5) * 2;
-
             card.style.transform = `perspective(1000px) rotateX(${-yPct * 15}deg) rotateY(${xPct * 15}deg) scale3d(1.05, 1.05, 1.05)`;
-
-            // Move highlight glare
-            card.style.setProperty('--tilt-x', `${xPct * 100}%`);
-            card.style.setProperty('--tilt-y', `${yPct * 100}%`);
         });
 
         card.addEventListener('mouseleave', () => {
@@ -368,6 +464,9 @@ async function openDetails(id, scrollToTrailer = false) {
         const title = mediaType === 'movie' ? item.title : item.name;
         const date = mediaType === 'movie' ? item.release_date : item.first_air_date;
         const duration = mediaType === 'movie' ? `${item.runtime} min` : `${item.number_of_seasons} Seasons`;
+
+        // Track this view in recently viewed
+        trackRecentlyViewed(item, title, date);
 
         modalBody.innerHTML = `
             <div class="modal-main">
