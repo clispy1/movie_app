@@ -11,6 +11,9 @@ let sortBy = "popularity.desc";
 let mediaType = "movie"; // 'movie' or 'tv'
 let watchlist = JSON.parse(localStorage.getItem('watchlist')) || [];
 let recentlyViewed = JSON.parse(localStorage.getItem('recentlyViewed')) || [];
+let carouselItems = [];
+let carouselIndex = 0;
+let carouselInterval = null;
 let searchTimeout;
 let isFetching = false;
 let hasMoreMovies = true;
@@ -272,10 +275,13 @@ async function loadMovies(append = false) {
         const data = await fetchWithCache(url, cacheKey);
 
         if (currentPage === 1 && !currentSearch && currentGenre === "all" && !append && !year && !minRating) {
-            renderHero(data.results[0]);
+            carouselItems = data.results.slice(0, 5); // Take top 5 for carousel
+            renderHero(carouselItems[carouselIndex]);
+            startHeroTimer();
             heroSection.style.display = "flex";
         } else if ((currentSearch || currentGenre !== "all" || year || minRating) && !append) {
             heroSection.style.display = "none";
+            clearInterval(carouselInterval);
         }
 
         hasMoreMovies = currentPage < data.total_pages;
@@ -330,7 +336,13 @@ async function renderHero(item) {
         const trailer = videos.results.find(v => v.type === "Trailer" && v.site === "YouTube");
 
         const bgUrl = IMG_PATH + item.backdrop_path;
-        heroSection.style.backgroundImage = `url(${bgUrl})`;
+
+        // Dynamic Backdrop Fade
+        const tempImg = new Image();
+        tempImg.onload = () => {
+            heroSection.style.backgroundImage = `url(${bgUrl})`;
+        };
+        tempImg.src = bgUrl;
 
         // Apply Dynamic Color
         const dynamicColor = await extractDominantColor(bgUrl);
@@ -340,6 +352,7 @@ async function renderHero(item) {
         const date = mediaType === 'movie' ? item.release_date : item.first_air_date;
 
         heroSection.innerHTML = `
+            <div class="hero-timer"></div>
             <div class="hero-overlay"></div>
             <div class="hero-content">
                 <h1 class="hero-title">${title}</h1>
@@ -359,6 +372,35 @@ async function renderHero(item) {
     } catch (err) {
         console.error("Error rendering hero:", err);
     }
+}
+
+function startHeroTimer() {
+    clearInterval(carouselInterval);
+    const timerBar = document.querySelector('.hero-timer');
+    if (!timerBar) return;
+
+    // Reset bar
+    timerBar.style.transition = 'none';
+    timerBar.style.width = '0%';
+
+    // Force Reflow
+    timerBar.offsetHeight;
+
+    // Start fill
+    timerBar.style.transition = 'width 10s linear';
+    timerBar.style.width = '100%';
+
+    carouselInterval = setInterval(() => {
+        carouselIndex = (carouselIndex + 1) % carouselItems.length;
+        renderHero(carouselItems[carouselIndex]);
+
+        // Reset and restart the visual bar
+        timerBar.style.transition = 'none';
+        timerBar.style.width = '0%';
+        timerBar.offsetHeight;
+        timerBar.style.transition = 'width 10s linear';
+        timerBar.style.width = '100%';
+    }, 10000);
 }
 
 function displayMovies(items, append = false) {
@@ -585,10 +627,14 @@ function toggleWatchlist(item, title, date) {
 
 // Scrolling Parallax for Hero
 function setupParallax() {
-    window.addEventListener('scroll', () => {
+    const mainContent = document.querySelector('.main-content');
+    if (!mainContent) return;
+
+    mainContent.addEventListener('scroll', () => {
+        const scrolled = mainContent.scrollTop;
         if (heroSection && heroSection.style.display !== 'none') {
-            const scrollPos = window.scrollY;
-            heroSection.style.backgroundPosition = `center ${scrollPos * 0.4}px`;
+            // Move background slightly slower than scroll (0.2 factor)
+            heroSection.style.backgroundPositionY = `${scrolled * 0.2}px`;
         }
     });
 }

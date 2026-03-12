@@ -390,18 +390,31 @@ body {
 
 /* Hero Section (Parallax Ready) */
 .hero {
-  height: 450px;
+  position: relative;
+  height: 600px;
+  display: flex;
+  align-items: center;
+  background-size: cover;
+  background-position: center;
   border-radius: var(--border-radius);
   overflow: hidden;
-  position: relative;
-  margin-bottom: 3rem;
-  background-size: cover;
-  background-position: center 0px;
-  /* Base for JS parallax */
-  display: flex;
-  align-items: flex-end;
+  margin-bottom: 3.5rem;
+  transition: background-image 0.8s ease-in-out;
   border: 1px solid var(--surface-border);
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+}
+
+.hero-timer {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 4px;
+  width: 0%;
+  background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+  z-index: 10;
+  box-shadow: 0 0 10px var(--primary-color);
+  opacity: 0.4;
+  /* Faintly showing */
 }
 
 .hero-overlay {
@@ -821,9 +834,11 @@ body {
   display: flex;
   gap: 1.5rem;
   overflow-x: auto;
-  padding-bottom: 1.5rem;
-  margin-bottom: -0.5rem;
-  /* Compensate for padding */
+  padding: 1.5rem 0.5rem;
+  margin: 0 -0.5rem;
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+  scrollbar-color: var(--primary-color) transparent;
 }
 
 .horizontal-scroll::-webkit-scrollbar {
