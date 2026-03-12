@@ -8,6 +8,7 @@ let currentPage = 1;
 let currentSearch = "";
 let currentGenre = "all";
 let sortBy = "popularity.desc";
+let mediaType = "movie"; // 'movie' or 'tv'
 let watchlist = JSON.parse(localStorage.getItem('watchlist')) || [];
 let searchTimeout;
 let isFetching = false;
@@ -15,7 +16,6 @@ let hasMoreMovies = true;
 
 // DOM Elements
 const main = document.getElementById("main");
-const form = document.getElementById("form");
 const searchInput = document.getElementById("searchfield");
 const resultsCount = document.querySelector(".results");
 const genresContainer = document.getElementById("genres-container");
@@ -23,8 +23,17 @@ const heroSection = document.getElementById("hero");
 const modal = document.getElementById("modal");
 const modalBody = document.getElementById("modal-body");
 const closeModal = document.querySelector(".close-modal");
+
+// Controls
 const safesearch = document.getElementById("safesearch");
 const sortBySelect = document.getElementById("sort-by");
+const filterYear = document.getElementById("filter-year");
+const filterRating = document.getElementById("filter-rating");
+const btnMovie = document.getElementById("toggle-movie");
+const btnTv = document.getElementById("toggle-tv");
+const filtersBtn = document.getElementById("filters-btn");
+const filtersDropdown = document.getElementById("filters-dropdown");
+const watchlistStats = document.getElementById("watchlist-stats");
 
 // Create Intersection Observer for Infinite Scroll
 const observerOptions = { root: null, rootMargin: '0px', threshold: 0.1 };
@@ -35,7 +44,6 @@ const observer = new IntersectionObserver((entries) => {
     }
 }, observerOptions);
 
-// Add infinite scroll trigger point
 const scrollTrigger = document.createElement('div');
 scrollTrigger.id = "scroll-trigger";
 scrollTrigger.style.height = "20px";
@@ -54,6 +62,7 @@ async function init() {
     await fetchGenres();
     loadMovies();
     setupEventListeners();
+    setupParallax();
 }
 
 // Enhanced Fetch with SessionStorage Caching
@@ -73,7 +82,7 @@ async function fetchWithCache(url, cacheKey) {
     }
 }
 
-function showErrorState(message = "Oops! Something went wrong while loading movies. Please check your connection.") {
+function showErrorState(message = "Oops! Something went wrong while loading content. Please check your connection.") {
     main.innerHTML = `
         <div class="error-boundary" style="grid-column: 1/-1; text-align: center; padding: 4rem; background: var(--surface-color); border-radius: var(--border-radius); border: 1px solid var(--danger-color);">
             <h2 style="color: var(--danger-color); margin-bottom: 1rem;">Connection Issue</h2>
@@ -86,7 +95,7 @@ function showErrorState(message = "Oops! Something went wrong while loading movi
 
 async function fetchGenres() {
     try {
-        const data = await fetchWithCache(`${BASE_URL}/genre/movie/list?api_key=${API_KEY}`, 'genres_list');
+        const data = await fetchWithCache(`${BASE_URL}/genre/${mediaType}/list?api_key=${API_KEY}`, `genres_${mediaType}`);
         renderGenres(data.genres);
     } catch (err) {
         // Fallback silently or show minimal error
@@ -120,11 +129,8 @@ function showSkeletons(append = false) {
         <div class="movie skeleton" style="height: 350px;"></div>
     `).join('');
 
-    if (append) {
-        main.insertAdjacentHTML('beforeend', skeletons);
-    } else {
-        main.innerHTML = skeletons;
-    }
+    if (append) main.insertAdjacentHTML('beforeend', skeletons);
+    else main.innerHTML = skeletons;
 }
 
 async function loadMovies(append = false) {
@@ -132,6 +138,8 @@ async function loadMovies(append = false) {
     isFetching = true;
 
     const isAdult = safesearch.value === "true";
+    const year = filterYear.value;
+    const minRating = filterRating.value;
 
     if (currentGenre === "watchlist") {
         displayWatchlist();
@@ -139,24 +147,33 @@ async function loadMovies(append = false) {
         return;
     }
 
+    watchlistStats.style.display = 'none';
     showSkeletons(append);
 
     let url = "";
     if (currentSearch) {
-        url = `${BASE_URL}/search/movie?api_key=${API_KEY}&query=${currentSearch}&page=${currentPage}&include_adult=${isAdult}`;
+        url = `${BASE_URL}/search/${mediaType}?api_key=${API_KEY}&query=${currentSearch}&page=${currentPage}&include_adult=${isAdult}`;
     } else {
-        url = `${BASE_URL}/discover/movie?api_key=${API_KEY}&page=${currentPage}&include_adult=${isAdult}&sort_by=${sortBy}`;
+        url = `${BASE_URL}/discover/${mediaType}?api_key=${API_KEY}&page=${currentPage}&include_adult=${isAdult}&sort_by=${sortBy}`;
         if (currentGenre !== "all") url += `&with_genres=${currentGenre}`;
+
+        // Advanced Filters
+        if (year) {
+            url += mediaType === 'movie' ? `&primary_release_year=${year}` : `&first_air_date_year=${year}`;
+        }
+        if (minRating) {
+            url += `&vote_average.gte=${minRating}`;
+        }
     }
 
     try {
-        const cacheKey = `movies_${currentSearch}_${currentGenre}_${sortBy}_p${currentPage}_${isAdult}`;
+        const cacheKey = `data_${mediaType}_${currentSearch}_${currentGenre}_${sortBy}_p${currentPage}_${isAdult}_y${year}_r${minRating}`;
         const data = await fetchWithCache(url, cacheKey);
 
-        if (currentPage === 1 && !currentSearch && currentGenre === "all" && !append) {
+        if (currentPage === 1 && !currentSearch && currentGenre === "all" && !append && !year && !minRating) {
             renderHero(data.results[0]);
             heroSection.style.display = "flex";
-        } else if ((currentSearch || currentGenre !== "all") && !append) {
+        } else if ((currentSearch || currentGenre !== "all" || year || minRating) && !append) {
             heroSection.style.display = "none";
         }
 
@@ -171,26 +188,70 @@ async function loadMovies(append = false) {
     }
 }
 
-async function renderHero(movie) {
-    if (!movie) return;
+// 🎨 Dynamic Color Extraction
+function extractDominantColor(imgUrl) {
+    return new Promise((resolve) => {
+        const img = new Image();
+        img.crossOrigin = "Anonymous";
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = 50; canvas.height = 50; // Downsample for speed
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, 50, 50);
+
+            try {
+                const data = ctx.getImageData(0, 0, 50, 50).data;
+                let r = 0, g = 0, b = 0, count = 0;
+
+                // Sample pixels, skipping a few for performance
+                for (let i = 0; i < data.length; i += 16) {
+                    r += data[i]; g += data[i + 1]; b += data[i + 2];
+                    count++;
+                }
+
+                r = Math.floor(r / count); g = Math.floor(g / count); b = Math.floor(b / count);
+                resolve(`rgb(${r}, ${g}, ${b})`);
+            } catch (e) {
+                resolve('#6c5ce7'); // Fallback primary color
+            }
+        };
+        img.onerror = () => resolve('#6c5ce7');
+        img.src = imgUrl;
+    });
+}
+
+async function renderHero(item) {
+    if (!item) return;
 
     try {
-        const cacheKey = `videos_${movie.id}`;
-        const videos = await fetchWithCache(`${BASE_URL}/movie/${movie.id}/videos?api_key=${API_KEY}`, cacheKey);
+        const cacheKey = `videos_${mediaType}_${item.id}`;
+        const videos = await fetchWithCache(`${BASE_URL}/${mediaType}/${item.id}/videos?api_key=${API_KEY}`, cacheKey);
         const trailer = videos.results.find(v => v.type === "Trailer" && v.site === "YouTube");
 
-        heroSection.style.backgroundImage = `url(${IMG_PATH + movie.backdrop_path})`;
+        const bgUrl = IMG_PATH + item.backdrop_path;
+        heroSection.style.backgroundImage = `url(${bgUrl})`;
+
+        // Apply Dynamic Color
+        const dynamicColor = await extractDominantColor(bgUrl);
+        document.documentElement.style.setProperty('--dynamic-glow', dynamicColor);
+
+        const title = mediaType === 'movie' ? item.title : item.name;
+        const date = mediaType === 'movie' ? item.release_date : item.first_air_date;
+
         heroSection.innerHTML = `
             <div class="hero-overlay"></div>
             <div class="hero-content">
-                <h1 class="hero-title">${movie.title}</h1>
+                <h1 class="hero-title">${title}</h1>
                 <div class="hero-meta">
-                    <span>⭐ ${movie.vote_average.toFixed(1)}</span>
-                    <span>📅 ${movie.release_date.split('-')[0]}</span>
+                    <span>⭐ ${item.vote_average.toFixed(1)}</span>
+                    <span>📅 ${date ? date.split('-')[0] : 'N/A'}</span>
+                    <span style="background: var(--dynamic-glow); color: white; padding: 2px 8px; border-radius: 6px; font-size: 0.8rem; font-weight: bold;">
+                        ${mediaType === 'movie' ? 'MOVIE' : 'TV SHOW'}
+                    </span>
                 </div>
                 <div class="hero-buttons" style="display: flex; gap: 1rem; margin-top: 1.5rem;">
-                    <button class="btn-primary" onclick="openDetails(${movie.id})">View Details</button>
-                    ${trailer ? `<button class="btn-secondary" onclick="openDetails(${movie.id}, true)">Watch Trailer</button>` : ''}
+                    <button class="btn-primary" onclick="openDetails(${item.id})">View Details</button>
+                    ${trailer ? `<button class="btn-secondary" onclick="openDetails(${item.id}, true)">Watch Trailer</button>` : ''}
                 </div>
             </div>
         `;
@@ -199,67 +260,114 @@ async function renderHero(movie) {
     }
 }
 
-function displayMovies(movies, append = false) {
+function displayMovies(items, append = false) {
     if (!append) main.innerHTML = "";
 
-    // Remove skeletons if appending
     if (append) {
         document.querySelectorAll('.skeleton').forEach(el => el.remove());
     }
 
-    if (!append && (!movies || movies.length === 0)) {
-        main.innerHTML = `<h2 class="no-results">No movies found</h2>`;
+    if (!append && (!items || items.length === 0)) {
+        main.innerHTML = `<h2 class="no-results" style="grid-column: 1/-1;">No results found</h2>`;
         observer.unobserve(scrollTrigger);
         return;
     }
 
-    movies.forEach(movie => {
-        const { id, title, poster_path, vote_average, release_date } = movie;
-        const movieEl = document.createElement("div");
-        movieEl.classList.add("movie");
-        movieEl.innerHTML = `
+    items.forEach(item => {
+        const title = mediaType === 'movie' ? item.title : item.name;
+        const date = mediaType === 'movie' ? item.release_date : item.first_air_date;
+        const { id, poster_path, vote_average } = item;
+
+        const card = document.createElement("div");
+        card.classList.add("movie");
+        card.innerHTML = `
             <img src="${poster_path ? POSTER_PATH + poster_path : 'https://via.placeholder.com/500x750?text=No+Poster'}" alt="${title}">
             <div class="movie-info">
                 <h3>${title}</h3>
                 <div class="movie-meta">
                     <span class="rating-badge">${vote_average.toFixed(1)}</span>
-                    <span>${release_date ? release_date.split('-')[0] : 'N/A'}</span>
+                    <span>${date ? date.split('-')[0] : 'N/A'}</span>
                 </div>
             </div>
         `;
-        movieEl.addEventListener('click', () => openDetails(id));
-        main.appendChild(movieEl);
+
+        // 💫 3D Tilt Effect Setup
+        card.addEventListener('mousemove', (e) => {
+            const rect = card.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            // Calculate rotation (max 15 degrees)
+            const xPct = (x / rect.width - 0.5) * 2;
+            const yPct = (y / rect.height - 0.5) * 2;
+
+            card.style.transform = `perspective(1000px) rotateX(${-yPct * 15}deg) rotateY(${xPct * 15}deg) scale3d(1.05, 1.05, 1.05)`;
+
+            // Move highlight glare
+            card.style.setProperty('--tilt-x', `${xPct * 100}%`);
+            card.style.setProperty('--tilt-y', `${yPct * 100}%`);
+        });
+
+        card.addEventListener('mouseleave', () => {
+            card.style.transform = `perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)`;
+        });
+
+        card.addEventListener('click', () => openDetails(id));
+        main.appendChild(card);
     });
 
-    if (hasMoreMovies) {
-        observer.observe(scrollTrigger);
-    } else {
-        observer.unobserve(scrollTrigger);
-    }
+    if (hasMoreMovies) observer.observe(scrollTrigger);
+    else observer.unobserve(scrollTrigger);
 }
 
-async function openDetails(movieId, scrollToTrailer = false) {
-    try {
-        const movieKey = `detail_${movieId}`;
-        const creditsKey = `credits_${movieId}`;
-        const videosKey = `videos_${movieId}`;
-        const similarKey = `similar_${movieId}`;
+// Stats Dashboard
+function calculateStats() {
+    if (watchlist.length === 0) return { count: 0, rating: '0.0' };
 
-        // Fetch with cache
-        const [movie, credits, videos, similar] = await Promise.all([
-            fetchWithCache(`${BASE_URL}/movie/${movieId}?api_key=${API_KEY}`, movieKey),
-            fetchWithCache(`${BASE_URL}/movie/${movieId}/credits?api_key=${API_KEY}`, creditsKey),
-            fetchWithCache(`${BASE_URL}/movie/${movieId}/videos?api_key=${API_KEY}`, videosKey),
-            fetchWithCache(`${BASE_URL}/movie/${movieId}/similar?api_key=${API_KEY}`, similarKey)
+    const count = watchlist.length;
+    const avgRating = watchlist.reduce((acc, curr) => acc + curr.vote_average, 0) / count;
+
+    return { count, rating: avgRating.toFixed(1) };
+}
+
+function displayWatchlist() {
+    heroSection.style.display = "none";
+    observer.unobserve(scrollTrigger);
+    displayMovies(watchlist);
+    resultsCount.innerText = watchlist.length;
+
+    // Show and update stats
+    const stats = calculateStats();
+    document.getElementById('stat-count').innerText = stats.count;
+    document.getElementById('stat-rating').innerText = `⭐ ${stats.rating}`;
+    watchlistStats.style.display = 'flex';
+}
+
+async function openDetails(id, scrollToTrailer = false) {
+    try {
+        const itemKey = `detail_${mediaType}_${id}`;
+        const creditsKey = `credits_${mediaType}_${id}`;
+        const videosKey = `videos_${mediaType}_${id}`;
+        const similarKey = `similar_${mediaType}_${id}`;
+
+        const [item, credits, videos, similar] = await Promise.all([
+            fetchWithCache(`${BASE_URL}/${mediaType}/${id}?api_key=${API_KEY}`, itemKey),
+            fetchWithCache(`${BASE_URL}/${mediaType}/${id}/credits?api_key=${API_KEY}`, creditsKey),
+            fetchWithCache(`${BASE_URL}/${mediaType}/${id}/videos?api_key=${API_KEY}`, videosKey),
+            fetchWithCache(`${BASE_URL}/${mediaType}/${id}/similar?api_key=${API_KEY}`, similarKey)
         ]);
 
         const trailer = videos.results.find(v => v.type === "Trailer" && v.site === "YouTube");
-        const inWatchlist = watchlist.some(m => m.id === movie.id);
+        const inWatchlist = watchlist.some(m => m.id === item.id && m.mediaType === mediaType);
+
+        const title = mediaType === 'movie' ? item.title : item.name;
+        const date = mediaType === 'movie' ? item.release_date : item.first_air_date;
+        const duration = mediaType === 'movie' ? `${item.runtime} min` : `${item.number_of_seasons} Seasons`;
 
         modalBody.innerHTML = `
             <div class="modal-main">
                 <div class="modal-sidebar">
-                    <img src="${movie.poster_path ? POSTER_PATH + movie.poster_path : 'https://via.placeholder.com/500x750'}" alt="${movie.title}">
+                    <img src="${item.poster_path ? POSTER_PATH + item.poster_path : 'https://via.placeholder.com/500x750'}" alt="${title}">
                     <div class="modal-actions" style="margin-top: 2rem;">
                         <button class="btn-primary" id="watchlist-btn" style="width: 100%;">
                             ${inWatchlist ? 'Remove from Watchlist' : 'Add to Watchlist'}
@@ -267,16 +375,16 @@ async function openDetails(movieId, scrollToTrailer = false) {
                     </div>
                 </div>
                 <div class="modal-info">
-                    <h2>${movie.title}</h2>
+                    <h2>${title}</h2>
                     <div class="hero-meta">
-                        <span>⭐ ${movie.vote_average.toFixed(1)}</span>
-                        <span>🕒 ${movie.runtime} min</span>
-                        <span>📅 ${movie.release_date}</span>
+                        <span>⭐ ${item.vote_average.toFixed(1)}</span>
+                        <span>🕒 ${duration}</span>
+                        <span>📅 ${date}</span>
                     </div>
                     <div class="genre-tags">
-                        ${movie.genres.map(g => `<span class="tag">${g.name}</span>`).join('')}
+                        ${item.genres.map(g => `<span class="tag">${g.name}</span>`).join('')}
                     </div>
-                    <p class="modal-overview">${movie.overview}</p>
+                    <p class="modal-overview">${item.overview}</p>
                     
                     ${trailer ? `
                         <div class="trailer-section" id="trailer-top">
@@ -301,21 +409,24 @@ async function openDetails(movieId, scrollToTrailer = false) {
                     </div>
 
                     <div class="similar-section">
-                        <p class="section-title-sm">Similar Movies</p>
+                        <p class="section-title-sm">Similar ${mediaType === 'movie' ? 'Movies' : 'Shows'}</p>
                         <div class="horizontal-scroll">
-                            ${similar.results.slice(0, 10).map(m => `
+                            ${similar.results.slice(0, 10).map(m => {
+            const mTitle = mediaType === 'movie' ? m.title : m.name;
+            return `
                                 <div class="similar-card" onclick="openDetails(${m.id})">
-                                    <img src="${m.poster_path ? POSTER_PATH + m.poster_path : 'https://via.placeholder.com/200x300'}" alt="${m.title}">
-                                    <div class="similar-title">${m.title}</div>
+                                    <img src="${m.poster_path ? POSTER_PATH + m.poster_path : 'https://via.placeholder.com/200x300'}" alt="${mTitle}">
+                                    <div class="similar-title">${mTitle}</div>
                                 </div>
-                            `).join('')}
+                                `
+        }).join('')}
                         </div>
                     </div>
                 </div>
             </div>
         `;
 
-        document.getElementById('watchlist-btn').onclick = () => toggleWatchlist(movie);
+        document.getElementById('watchlist-btn').onclick = () => toggleWatchlist(item, title, date);
         modal.style.display = "flex";
 
         if (scrollToTrailer && trailer) {
@@ -327,42 +438,63 @@ async function openDetails(movieId, scrollToTrailer = false) {
             setTimeout(() => modal.scrollTop = 0, 10);
         }
     } catch (err) {
-        console.error("Error fetching details:", err);
-        modalBody.innerHTML = `<h2 class="no-results" style="color:var(--danger-color)">Failed to load movie details.</h2>`;
+        modalBody.innerHTML = `<h2 class="no-results" style="color:var(--danger-color)">Failed to load details.</h2>`;
         modal.style.display = "flex";
     }
 }
 
-function toggleWatchlist(movie) {
-    const index = watchlist.findIndex(m => m.id === movie.id);
+function toggleWatchlist(item, title, date) {
+    const index = watchlist.findIndex(m => m.id === item.id && m.mediaType === mediaType);
     if (index > -1) {
         watchlist.splice(index, 1);
     } else {
         watchlist.push({
-            id: movie.id,
-            title: movie.title,
-            poster_path: movie.poster_path,
-            vote_average: movie.vote_average,
-            release_date: movie.release_date
+            id: item.id,
+            title: title,
+            name: title, // Handle both
+            poster_path: item.poster_path,
+            vote_average: item.vote_average,
+            release_date: date,
+            first_air_date: date,
+            mediaType: mediaType
         });
     }
     localStorage.setItem('watchlist', JSON.stringify(watchlist));
 
     const btn = document.getElementById('watchlist-btn');
-    const inWatchlist = watchlist.some(m => m.id === movie.id);
+    const inWatchlist = watchlist.some(m => m.id === item.id && m.mediaType === mediaType);
     btn.innerText = inWatchlist ? 'Remove from Watchlist' : 'Add to Watchlist';
 
     if (currentGenre === "watchlist") displayWatchlist();
 }
 
-function displayWatchlist() {
-    heroSection.style.display = "none";
-    observer.unobserve(scrollTrigger);
-    displayMovies(watchlist);
-    resultsCount.innerText = watchlist.length;
+// Scrolling Parallax for Hero
+function setupParallax() {
+    window.addEventListener('scroll', () => {
+        if (heroSection && heroSection.style.display !== 'none') {
+            const scrollPos = window.scrollY;
+            heroSection.style.backgroundPosition = `center ${scrollPos * 0.4}px`;
+        }
+    });
 }
 
 function setupEventListeners() {
+    // TV / Movie Toggle
+    btnMovie.onclick = () => switchMediaType('movie', btnMovie, btnTv);
+    btnTv.onclick = () => switchMediaType('tv', btnTv, btnMovie);
+
+    function switchMediaType(type, activeBtn, inactiveBtn) {
+        if (mediaType === type) return;
+        mediaType = type;
+        activeBtn.classList.add('active');
+        inactiveBtn.classList.remove('active');
+        currentPage = 1;
+        hasMoreMovies = true;
+        currentSearch = searchInput.value;
+        fetchGenres(); // Reload genres for TV
+        loadMovies();
+    }
+
     searchInput.addEventListener("input", (e) => {
         clearTimeout(searchTimeout);
         searchTimeout = setTimeout(() => {
@@ -379,6 +511,28 @@ function setupEventListeners() {
         hasMoreMovies = true;
         loadMovies();
     };
+
+    // Advanced Filters Toggle & Inputs
+    filtersBtn.onclick = () => {
+        filtersDropdown.classList.toggle('hidden');
+    };
+
+    const triggerFilterUpdate = () => {
+        currentPage = 1;
+        hasMoreMovies = true;
+        loadMovies();
+    };
+
+    filterYear.addEventListener('change', triggerFilterUpdate);
+    filterRating.addEventListener('change', triggerFilterUpdate);
+    safesearch.addEventListener('change', triggerFilterUpdate);
+
+    // Close Dropdown when clicking outside
+    document.addEventListener('click', (e) => {
+        if (!filtersBtn.contains(e.target) && !filtersDropdown.contains(e.target)) {
+            filtersDropdown.classList.add('hidden');
+        }
+    });
 
     closeModal.onclick = () => {
         modal.style.display = "none";
@@ -400,6 +554,8 @@ function setupEventListeners() {
         currentGenre = "all";
         currentSearch = "";
         searchInput.value = "";
+        filterYear.value = "";
+        filterRating.value = "";
         currentPage = 1;
         hasMoreMovies = true;
         loadMovies();
@@ -408,12 +564,6 @@ function setupEventListeners() {
     document.querySelector('[data-genre="watchlist"]').onclick = (e) => {
         e.preventDefault();
         currentGenre = "watchlist";
-        loadMovies();
-    };
-
-    safesearch.onchange = () => {
-        currentPage = 1;
-        hasMoreMovies = true;
         loadMovies();
     };
 }

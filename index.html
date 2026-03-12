@@ -2,81 +2,108 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>MovieLand | Premium Streaming Experience</title>
-    <link rel="stylesheet" href="./style.css" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MovieLand Ultimate</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
 </head>
 
 <body>
-    <!-- Background Decoration -->
-    <div class="bg-blobs">
+    <!-- Immersive Background Blobs -->
+    <div class="blob-container">
         <div class="blob"></div>
         <div class="blob"></div>
         <div class="blob"></div>
     </div>
 
-    <div class="app-container">
-        <!-- Sidebar for Genres & Navigation -->
+    <div class="app-layout">
+        <!-- Sidebar Navigation -->
         <aside class="sidebar">
             <div class="logo">
-                <a href="index.html">MovieLand</a>
+                <a href="#">MovieLand</a>
             </div>
+
             <nav class="nav-links">
-                <a href="#" class="active" data-genre="all">Discover</a>
-                <a href="#" data-genre="watchlist">Watchlist</a>
-                <div class="genre-list">
-                    <p class="section-title">Genres</p>
-                    <div id="genres-container">
-                        <!-- Genres will be injected here -->
-                    </div>
+                <p class="section-title">Discover</p>
+                <a href="#" data-genre="all" class="active"><span>Trending</span></a>
+                <a href="#" data-genre="watchlist"><span>My Watchlist</span></a>
+
+                <p class="section-title" style="margin-top: 2rem;">Genres</p>
+                <div id="genres-container">
+                    <!-- Genres dynamically injected here -->
                 </div>
             </nav>
         </aside>
 
-        <div class="main-content">
-            <!-- Header with Search and Sorting -->
+        <!-- Main Content Area -->
+        <main class="main-content">
             <header class="header">
-                <div class="search-bar">
-                    <form id="form">
-                        <i class="search-icon">🔍</i>
-                        <input type="text" id="searchfield" class="search" placeholder="Search for movies..."
-                            autocomplete="off" />
+                <!-- TV/Movie Toggle & Search -->
+                <div class="search-container"
+                    style="display: flex; gap: 1rem; align-items: center; width: 100%; max-width: 600px;">
+                    <div class="media-type-toggle">
+                        <button id="toggle-movie" class="type-btn active">Movies</button>
+                        <button id="toggle-tv" class="type-btn">TV Shows</button>
+                    </div>
+                    <form id="form" style="flex:1;">
+                        <input type="text" id="searchfield" placeholder="Search..." class="search-bar">
                     </form>
                 </div>
-                <div class="header-actions">
+
+                <!-- Advanced Filters -->
+                <div class="grid-controls">
+                    <span class="results-text"><span class="results">0</span> Results</span>
+
+                    <!-- Advanced Filters Popup (Icon) -->
+                    <div class="advanced-filters-wrapper">
+                        <button id="filters-btn" class="glass-btn">Filters ⚙️</button>
+                        <div id="filters-dropdown" class="glass-dropdown hidden">
+                            <label>Release Year</label>
+                            <input type="number" id="filter-year" placeholder="e.g. 2023" min="1900" max="2100"
+                                class="glass-input">
+
+                            <label>Min Rating</label>
+                            <input type="number" id="filter-rating" placeholder="0 - 10" min="0" max="10" step="0.5"
+                                class="glass-input">
+
+                            <label>Safe Search</label>
+                            <select id="safesearch" class="glass-select">
+                                <option value="false">Adult Content Off</option>
+                                <option value="true">Adult Content On</option>
+                            </select>
+                        </div>
+                    </div>
+
                     <select id="sort-by" class="glass-select">
-                        <option value="popularity.desc">Popularity</option>
+                        <option value="popularity.desc">Most Popular</option>
                         <option value="vote_average.desc">Top Rated</option>
-                        <option value="primary_release_date.desc">Newest</option>
+                        <option value="primary_release_date.desc">Newest First</option>
                         <option value="revenue.desc">Box Office</option>
-                    </select>
-                    <select id="safesearch" class="glass-select">
-                        <option value="false">Safe Search Off</option>
-                        <option value="true">Safe Search On</option>
                     </select>
                 </div>
             </header>
 
-            <!-- Hero Section for Featured Movie -->
-            <section id="hero" class="hero">
-                <!-- Featured movie content injected here -->
+            <!-- Hero Section for Featured Content -->
+            <section class="hero" id="hero">
+                <!-- Content injected via JS -->
             </section>
 
-            <!-- Grid Controls -->
-            <div class="grid-controls">
-                <span class="results-count"><span class="results">0</span> Movies found</span>
-                <!-- Pagination -->
-                <div class="pagination-container">
-                    <button id="prev" class="btn-icon">←</button>
-                    <div id="num" class="page-indicator">Page 1</div>
-                    <button id="next" class="btn-icon">→</button>
+            <!-- Watchlist Stats (Hidden by default) -->
+            <section class="watchlist-stats hidden" id="watchlist-stats">
+                <div class="stat-card">
+                    <h3>Total Titles</h3>
+                    <p id="stat-count">0</p>
                 </div>
-            </div>
+                <div class="stat-card">
+                    <h3>Avg Rating</h3>
+                    <p id="stat-rating">0.0</p>
+                </div>
+            </section>
 
             <!-- Movie Grid -->
             <main id="main" class="movie-grid"></main>
-        </div>
+    </div>
     </div>
 
     <!-- Movie Detail Modal -->
