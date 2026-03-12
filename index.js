@@ -69,36 +69,70 @@ async function init() {
 // =====================
 // ELITE EFFECTS SETUP
 // =====================
+// =====================
+// ELITE EFFECTS SETUP
+// =====================
 function setupEliteEffects() {
+    const dot = document.getElementById('cursor-dot');
+    const outline = document.getElementById('cursor-outline');
     const spotlight = document.getElementById('cursor-spotlight');
     const progressBar = document.getElementById('scroll-progress');
 
-    // Cursor Spotlight
+    let mouseX = 0, mouseY = 0;
+    let dotX = 0, dotY = 0;
+    let outlineX = 0, outlineY = 0;
+
+    // Movement Tracking
     document.addEventListener('mousemove', (e) => {
-        spotlight.style.left = e.clientX + 'px';
-        spotlight.style.top = e.clientY + 'px';
-        // Update spotlight color to match dynamic glow
+        mouseX = e.clientX;
+        mouseY = e.clientY;
+
+        // Spotlight follows instantly
+        spotlight.style.left = mouseX + 'px';
+        spotlight.style.top = mouseY + 'px';
+
+        // Update spotlight color
         const glow = getComputedStyle(document.documentElement).getPropertyValue('--dynamic-glow').trim();
         spotlight.style.background = `radial-gradient(circle, ${glow}18 0%, transparent 70%)`;
+
+        // Check for interactive elements (Hover effects)
+        const target = e.target.closest('button, a, .movie, .similar-card, .genre-item, input, select');
+        if (target) {
+            document.body.classList.add('cursor-hover');
+        } else {
+            document.body.classList.remove('cursor-hover');
+        }
     });
+
+    // Smooth Animation Loop
+    function animate() {
+        // Dot follows with slight lag
+        dotX += (mouseX - dotX) * 0.2;
+        dotY += (mouseY - dotY) * 0.2;
+        dot.style.left = dotX + 'px';
+        dot.style.top = dotY + 'px';
+
+        // Outline follows with more lag (Smooth trailing)
+        outlineX += (mouseX - outlineX) * 0.1;
+        outlineY += (mouseY - outlineY) * 0.1;
+        outline.style.left = outlineX + 'px';
+        outline.style.top = outlineY + 'px';
+
+        requestAnimationFrame(animate);
+    }
+    animate();
 
     // Scroll Progress Bar
     const scrollArea = document.querySelector('.main-content');
-    if (scrollArea) {
-        scrollArea.addEventListener('scroll', () => {
-            const scrolled = scrollArea.scrollTop;
-            const total = scrollArea.scrollHeight - scrollArea.clientHeight;
-            const pct = total > 0 ? (scrolled / total) * 100 : 0;
-            progressBar.style.width = pct + '%';
-        });
-    } else {
-        window.addEventListener('scroll', () => {
-            const scrolled = window.scrollY;
-            const total = document.body.scrollHeight - window.innerHeight;
-            const pct = total > 0 ? (scrolled / total) * 100 : 0;
-            progressBar.style.width = pct + '%';
-        });
-    }
+    const updateScroll = () => {
+        const scrolled = scrollArea ? scrollArea.scrollTop : window.scrollY;
+        const total = scrollArea ? (scrollArea.scrollHeight - scrollArea.clientHeight) : (document.body.scrollHeight - window.innerHeight);
+        const pct = total > 0 ? (scrolled / total) * 100 : 0;
+        progressBar.style.width = pct + '%';
+    };
+
+    if (scrollArea) scrollArea.addEventListener('scroll', updateScroll);
+    else window.addEventListener('scroll', updateScroll);
 }
 
 // Keyboard Navigation
